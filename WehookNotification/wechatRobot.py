@@ -98,7 +98,7 @@ def createPlot(data_today, data_yesterday, data_szlng):
     plt.bar(x, y1, color=['#c5e0b4'], label='今日提气量')
     plt.plot(x, y2, marker='o', label='昨日提气量')
     plt.legend()
-    data_szlng = round(list(data_szlng)[0])`
+    data_szlng = round(list(data_szlng)[0])
     if data_szlng == 0:
         plt.annotate(xy=[6, 1200], s='今日深圳LNG未反输')
     else:
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     oneday = datetime.timedelta(days=1)
     yesterday = today-oneday
     hour = time.strftime("%H", time.localtime())
-    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=c14ed7e1-98b1-4eca-a3d1-0f392620789c&debug=1"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
+    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9867-19dc7324784c"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
     post_data = querySql()
     data_today = post_data[0]
     data_yesterday = post_data[1]
