@@ -25,7 +25,7 @@ def webookRequest(url, jpg_base64, jpg_md5):
             print("发送失败")
         return response.text
 
-def querySql():
+def querySql(sql):
     config_dit = {
         'user': 'gmsweb',  # 数据库帐号
         'password': 'GDLNG1234',  # 数据库访问密码
@@ -36,73 +36,57 @@ def querySql():
     def conn():
         connect = pymssql.connect(**config_dit)
         if conn:
-            print("Connected Successfully!")
             return connect
         else:
             print("Connected Failed.")
 
     connection = conn()
     cursor = connection.cursor()
-    content1 = []
-    content2 = []
-    for i in range(int(hour)):
-        sql = """select SUM(isnull(Energy,0))/54.55 from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
-            AND TIME='%s %s:00:00' """ % (today, i)
-        cursor.execute(sql)
-        row = cursor.fetchone()
-        row_value = row[0]
-        content1.append(row_value)
-
-    for i in range(int(hour)):
-        sql = """select SUM(isnull(Energy,0))/54.55 from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
-            AND TIME='%s %s:00:00' """ % (yesterday, i)
-        cursor.execute(sql)
-        row = cursor.fetchone()
-        row_value = row[0]
-        content2.append(row_value)
-    # content = content.encode("utf-8")
-
-    sql = """select SUM(isnull(Energy,0))/54.55 from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name = 'SZLNG') 
-            AND SUBSTRING(CONVERT(VARCHAR(20),TIME,25),1,10) = '%s' """ % today
     cursor.execute(sql)
     row = cursor.fetchone()
-    content3 = row
-
-    return [content1, content2, content3]
+    row_value = row[0]
+    return row_value
     cursor.close()
     connection.close()
 
-
-def createPlot(data_today, data_yesterday, data_szlng):
+def createPlot(dtq_total, dtq_yesterday_total, toq_total, toq_yesterday_total, accutoq_today, accutoq_yesterday, toq_yesterday_accu):
     int_hour = int(hour)
     x_hour = range(0, int_hour)
     x = np.array(x_hour)
-    y1 = np.array(data_today)
-    y2 = np.array(data_yesterday)
+    minus = accutoq_today-accutoq_yesterday
+    y1 = np.array(dtq_total)
+    y2 = np.array(dtq_yesterday_total)
+    y3 = np.array(toq_total)
+    y4 = np.array(toq_yesterday_total)
+# pyplot的初始化参数
     plt.rcParams['font.sans-serif'] = ['SimHei']
     plt.rcParams['axes.unicode_minus'] = False
+    plt.rcParams['figure.figsize'] = [15, 7]
     x_major_locator = MultipleLocator(1)
     y_major_locator = MultipleLocator(200)
     ax = plt.gca()
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
     plt.ylim(0, 1400)
-    for a, b in zip(x, y1):
-        plt.text(a, b, '%.0f' % b, ha='center', va='bottom', fontsize=10)
-    # for a, b in zip(x, y2):
+
+    # for a, b in zip(x, y1):
     #     plt.text(a, b, '%.0f' % b, ha='center', va='bottom', fontsize=10)
-    plt.title("今日提气量曲线图")
+    plt.title(today_string + "提气量曲线图")
     plt.xlabel("x - 小时")
     plt.ylabel("y - 气量（吨）")
     plt.grid(axis="y")
+
     plt.bar(x, y1, color=['#c5e0b4'], label='今日提气量')
-    plt.plot(x, y2, marker='o', label='昨日提气量')
+    plt.plot(x, y2, color='deepskyblue', marker='o', label='昨日提气量')
+    plt.bar(x, y3, color=['#f4b182'], label='今日出罐量')
+    plt.plot(x, y4, color='grey', marker='o', label='昨日出罐量')
     plt.legend()
-    data_szlng = round(list(data_szlng)[0])
-    if data_szlng == 0:
-        plt.annotate(xy=[6, 1200], s='今日深圳LNG未反输')
+    if minus > 0:
+        plt.annotate(xy=[2, 1200], color='red', bbox=dict(boxstyle='round,pad=0.5', fc='yellow', ec='k', lw=1, alpha=0.4), s="截止至%d时,今日累计出罐较昨日增加%d吨" %(int_hour, minus))
     else:
-        plt.annotate(xy=[6, 1200], s='今日深圳LNG反输量为：%s吨' % data_szlng)
+        plt.annotate(xy=[2, 1200], color='red', bbox=dict(boxstyle='round,pad=0.5', fc='yellow', ec='k', lw=1, alpha=0.4), s="截止至%d时,今日累计出罐较昨日减少%d吨" % (int_hour, -minus))
+
+    plt.annotate(xy=[2, 1000], color='black', bbox=dict(boxstyle='round,pad=0.5', fc='yellow', ec='k', lw=1, alpha=0.4), s="昨日出罐总量为%s吨" %(toq_yesterday_accu))
     file_name = 'D:/wehook_notification/wehook_pic/'+time.strftime("%Y-%m-%d%H%M%S", time.localtime())+'.jpg'
     plt.savefig(file_name)
     return file_name
@@ -117,20 +101,62 @@ def cvtbase64(f1_name):
 
 
 if __name__ == "__main__":
-    today = datetime.date.today()
+    # today = datetime.date.today()
+    today_string = '2021-11-08'
+    today = datetime.datetime.strptime(today_string, '%Y-%m-%d').date()
     oneday = datetime.timedelta(days=1)
     yesterday = today-oneday
-    hour = time.strftime("%H", time.localtime())
+    hour = int(time.strftime("%H", time.localtime()))
     wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9867-19dc7324784c"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
-    post_data = querySql()
-    data_today = post_data[0]
-    data_yesterday = post_data[1]
-    data_szlng = post_data[2]
-    f_name = createPlot(data_today, data_yesterday, data_szlng)
-    cvt_result = cvtbase64(f_name)
-    jpg_base64 = cvt_result[0]
-    jpg_md5 = cvt_result[1]
-    result = webookRequest(wehook_url, jpg_base64, jpg_md5)
+    dtq_total = []
+    dtq_yesterday_total = []
+    toq_total = []
+    toq_yesterday_total = []
+    accutoq_today = 0
+    accutoq_yesterday = 0
+
+# 今日每小时提气量
+    for i in range(hour):
+        sql = """select SUM(isnull(Energy,0))/54.55 from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
+            AND TIME='%s %s:00:00' """ % (today, i)
+        dtq_today_mass = querySql(sql)
+        dtq_total.append(dtq_today_mass)
+
+# 昨日每小时提气量
+    for i in range(hour):
+        sql = """select SUM(isnull(Energy,0))/54.55 from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
+            AND TIME='%s %s:00:00' """ % (yesterday, i)
+        dtq_yesterday_mass = querySql(sql)
+        dtq_yesterday_total.append(dtq_yesterday_mass)
+
+# 今日每小时出罐量
+    for i in range(hour):
+        sql = """SELECT a.s-b.t from (select SUM(isnull(Energy,0))/54.55 s from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
+ AND TIME='%s %s:00:00') a, (select SUM(isnull(Mass,0) / 1000) t  from gmspdb04.dbo.S2_HourlyStationBalance where StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name = 'SZLNG') AND TIME='%s %s:00:00') b;""" % (today, i, today, i)
+        toq_today_mass = querySql(sql)
+        toq_total.append(toq_today_mass)
+    for h in toq_total:
+        accutoq_today += int(h)
+
+# 昨日每小时出罐量
+    for i in range(hour):
+        sql = """SELECT a.s-b.t from (select SUM(isnull(Energy,0))/54.55 s from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
+    AND TIME='%s %s:00:00') a, (select SUM(isnull(Mass,0) / 1000) t  from gmspdb04.dbo.S2_HourlyStationBalance where StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name = 'SZLNG') AND TIME='%s %s:00:00') b;""" % (yesterday, i, yesterday, i)
+        toq_yesterday_mass = querySql(sql)
+        toq_yesterday_total.append(toq_yesterday_mass)
+    for p in toq_yesterday_total:
+        accutoq_yesterday += int(p)
+
+# 昨日总出罐量
+    sql = """SELECT a.s-b.t from (select SUM(isnull(Energy,0))/54.55 s from gmspdb04.dbo.S2_HourlyStationBalance where + StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name <> 'HKCGB1' and Name <> 'TRN1' and Name <> 'SZLNG') 
+        AND CONVERT(VARCHAR(20),TIME,25) LIKE '%%%s%%') a, (select SUM(isnull(Mass,0) / 1000) t  from gmspdb04.dbo.S2_HourlyStationBalance where StnId in (select Id from gmspdb04.dbo.S2_Stn where ObjTypeId=89 and Name = 'SZLNG') AND CONVERT(VARCHAR(20),TIME,25) LIKE '%%%s%%') b;""" % (yesterday, yesterday)
+    toq_yesterday_accu = round(querySql(sql))
+
+    f_name = createPlot(dtq_total, dtq_yesterday_total, toq_total, toq_yesterday_total, accutoq_today, accutoq_yesterday, toq_yesterday_accu)
+    # cvt_result = cvtbase64(f_name)
+    # jpg_base64 = cvt_result[0]
+    # jpg_md5 = cvt_result[1]
+    # result = webookRequest(wehook_url, jpg_base64, jpg_md5)
 
 
 
