@@ -107,7 +107,7 @@ if __name__ == "__main__":
     oneday = datetime.timedelta(days=1)
     yesterday = today-oneday
     hour = int(time.strftime("%H", time.localtime()))
-    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9867-19dc7324784c"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
+    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9967-19dc7324784c"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
     dtq_total = []
     dtq_yesterday_total = []
     toq_total = []
@@ -153,10 +153,10 @@ if __name__ == "__main__":
     toq_yesterday_accu = round(querySql(sql))
 
     f_name = createPlot(dtq_total, dtq_yesterday_total, toq_total, toq_yesterday_total, accutoq_today, accutoq_yesterday, toq_yesterday_accu)
-    # cvt_result = cvtbase64(f_name)
-    # jpg_base64 = cvt_result[0]
-    # jpg_md5 = cvt_result[1]
-    # result = webookRequest(wehook_url, jpg_base64, jpg_md5)
+    cvt_result = cvtbase64(f_name)
+    jpg_base64 = cvt_result[0]
+    jpg_md5 = cvt_result[1]
+    result = webookRequest(wehook_url, jpg_base64, jpg_md5)
 
 
 

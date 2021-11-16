@@ -41,6 +41,6 @@ def wehookRequest(wehook_url, weather):
 
 if __name__ == "__main__":
     url = "https://weather.cma.cn/web/channel-3780.html"
-    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9867-19dc7324784c"
+    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e52d7-c676-43ee-9867-19dc7324784c"
     weather = weatherFetch(url)
     # wehookRequest(wehook_url, weather)
