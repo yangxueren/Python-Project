@@ -68,7 +68,7 @@ def wehookRequest(wehook_url, jpg_base64, jpg_md5):
 if __name__ == '__main__':
     # 首先创建一个保存截图的文件夹
     filename = "D:/wehook_notification/pics"
-    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3ff5267-c676-43ee-9867-19dc7324784c"
+
     if not os.path.isdir(filename):
         # 判断文件夹是否存在，如果不存在就创建一个
         os.makedirs(filename)
@@ -77,21 +77,19 @@ if __name__ == '__main__':
     # 列表中每个元素都是一个元组，文件保存url的格式是：保存为图片的名称, 网页地址。
     # 例：baidu.png,https://www.baidu.com
     #     zhihu.png,https://www.zhihu.com
-    with open('urls.txt', 'r') as f:
-        lines = f.readlines()
-
-    for line in lines:
-        thelist = line.strip().split(",")
-        if len(thelist) == 2 and thelist[0] and thelist[1]:
-            pic_name = thelist[0]
-            url = thelist[1]
+    with open('D:/wehook_notification/urls.txt', 'r') as f:
+        config = f.readlines()
+        weather_url = config[0]
+        wehook_url = config[1]
+        weather_url = weather_url.strip().split(",")
+        if len(weather_url) == 2 and weather_url[0] and weather_url[1]:
+            pic_name = weather_url[0]
+            url = weather_url[1]
             pic_path = filename + '/' + pic_name
             webshot(pic_name, url)
         cvtresult = cvtbase64(pic_path)
         jpg_base64 = cvtresult[0]
         jpg_md5 = cvtresult[1]
-        print(jpg_base64)
-        print(jpg_md5)
         wehookRequest(wehook_url, jpg_base64, jpg_md5)
 
 

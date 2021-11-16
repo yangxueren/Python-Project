@@ -71,15 +71,15 @@ def createPlot(dtq_total, dtq_yesterday_total, toq_total, toq_yesterday_total, a
 
     # for a, b in zip(x, y1):
     #     plt.text(a, b, '%.0f' % b, ha='center', va='bottom', fontsize=10)
-    plt.title(today_string + "提气量曲线图")
+    plt.title("提气量曲线图")
     plt.xlabel("x - 小时")
     plt.ylabel("y - 气量（吨）")
     plt.grid(axis="y")
 
-    plt.bar(x, y1, color=['#c5e0b4'], label='今日提气量')
-    plt.plot(x, y2, color='deepskyblue', marker='o', label='昨日提气量')
-    plt.bar(x, y3, color=['#f4b182'], label='今日出罐量')
-    plt.plot(x, y4, color='grey', marker='o', label='昨日出罐量')
+    plt.bar(x, y1, color=['#c5e0b4'], label='%s提气量' % today)
+    plt.plot(x, y2, color='deepskyblue', marker='o', label='%s提气量' % yesterday)
+    plt.bar(x, y3, color=['#f4b182'], label='%s出罐量' % today)
+    plt.plot(x, y4, color='grey', marker='o', label='%s出罐量' % yesterday)
     plt.legend()
     if minus > 0:
         plt.annotate(xy=[2, 1200], color='red', bbox=dict(boxstyle='round,pad=0.5', fc='yellow', ec='k', lw=1, alpha=0.4), s="截止至%d时,今日累计出罐较昨日增加%d吨" %(int_hour, minus))
@@ -101,13 +101,15 @@ def cvtbase64(f1_name):
 
 
 if __name__ == "__main__":
-    # today = datetime.date.today()
-    today_string = '2021-11-08'
-    today = datetime.datetime.strptime(today_string, '%Y-%m-%d').date()
+    today = datetime.date.today()
+    # today_string = '2021-11-08'
+    # today = datetime.datetime.strptime(today_string, '%Y-%m-%d').date()
     oneday = datetime.timedelta(days=1)
     yesterday = today-oneday
     hour = int(time.strftime("%H", time.localtime()))
-    wehook_url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=2f3e5267-c676-43ee-9967-19dc7324784c"   # 这个是你要调用的机器人地址，在群里添加了机器人之后就会有这个地址了，每个机器人只有一个地址
+    with open('D:/wehook_notification/urls.txt', 'r') as f:
+        config = f.readlines()
+        wehook_url = config[1]
     dtq_total = []
     dtq_yesterday_total = []
     toq_total = []
